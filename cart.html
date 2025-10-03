@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="gray">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>Корзина — TROYKA SHOP</title>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="script.js"></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="container navbar nav-wrap">
+            <a href="index.html" class="display-title" style="text-decoration:none; font-size: clamp(20px,4.5vw,28px);">
+                <span class="gradient-text">TROYKA</span> <span class="accent">SHOP</span>
+            </a>
+            <nav class="nav">
+                <a class="nav-link" href="index.html">Категории</a>
+                <a class="nav-link active" href="cart.html">Корзина</a>
+                <a class="nav-link" href="favorites.html">Избранное</a>
+                <a class="nav-link" href="profile.html">Профиль</a>
+            </nav>
+        </div>
+    </header>
+    <main class="container" style="padding-bottom:64px;">
+        <section>
+            <div id="cartItems" class="list"></div>
+            <div class="card row" id="cartSummary" style="margin-top: 0.5rem;">
+                <div>
+                    <div class="muted">Итого</div>
+                    <div class="price" id="cartTotal">0 ₽</div>
+                </div>
+                <button id="checkoutBtn" class="btn primary">Оформить заказ</button>
+            </div>
+        </section>
+    </main>
+    <script>
+        // Инициализация корзины
+        document.addEventListener('DOMContentLoaded', () => {
+            // Загружаем состояние
+            const savedState = localStorage.getItem('mini_shop_state_v1');
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                // Инициализируем глобальное состояние
+                window.state = state;
+            }
+            
+            // Рендерим корзину
+            if (typeof renderCart === 'function') {
+                renderCart();
+            }
+            
+            // Добавляем обработчик оформления заказа
+            const checkoutBtn = document.getElementById('checkoutBtn');
+            if (checkoutBtn) {
+                checkoutBtn.addEventListener('click', () => {
+                    if (typeof checkout === 'function') {
+                        checkout();
+                    }
+                });
+            }
+            
+            // Слушаем изменения от админки
+            window.addEventListener('adminStateChanged', () => {
+                if (typeof renderCart === 'function') {
+                    renderCart();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+
+

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="gray">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>Категория — TROYKA SHOP</title>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="script.js"></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="container navbar nav-wrap">
+            <a href="index.html" class="display-title" style="text-decoration:none; font-size: clamp(20px,4.5vw,28px);">
+                <span class="gradient-text">TROYKA</span> <span class="accent">SHOP</span>
+            </a>
+            <nav class="nav">
+                <a class="nav-link" href="index.html">Категории</a>
+                <a class="nav-link" href="cart.html">Корзина</a>
+                <a class="nav-link" href="favorites.html">Избранное</a>
+                <a class="nav-link" href="profile.html">Профиль</a>
+            </nav>
+        </div>
+    </header>
+    <main class="container" style="padding-top: 14px; padding-bottom: 64px;">
+        <div class="muted" id="categoryTitle"></div>
+        <div style="height: 8px;"></div>
+        <div id="sortContainer"></div>
+        <div id="productGrid" class="grid"></div>
+    </main>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(location.search);
+            const catParam = params.get('cat');
+            const state = JSON.parse(localStorage.getItem('mini_shop_state_v1')||'{}');
+            const cat = (state.categories||[]).find(c=> (c.slugEn && c.slugEn===catParam) || c.id===catParam);
+            const el = document.getElementById('categoryTitle');
+            if (el) el.textContent = cat ? cat.name : 'Категория';
+            if (cat) {
+                // Рендерим товары этой категории напрямую
+                if (typeof renderProductGrid === 'function') {
+                    renderProductGrid(cat.id);
+                } else {
+                    // fallback через hash для старой логики
+                    location.hash = '#cat=' + cat.id;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+
+

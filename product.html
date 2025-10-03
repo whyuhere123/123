@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="gray">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>Товар — TROYKA SHOP</title>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="script.js"></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="container navbar nav-wrap">
+            <a href="index.html" class="display-title" style="text-decoration:none; font-size: clamp(20px,4.5vw,28px);">
+                <span class="gradient-text">TROYKA</span> <span class="accent">SHOP</span>
+            </a>
+            <nav class="nav">
+                <a class="nav-link" href="index.html">Категории</a>
+                <a class="nav-link" href="cart.html">Корзина</a>
+                <a class="nav-link" href="favorites.html">Избранное</a>
+                <a class="nav-link" href="profile.html">Профиль</a>
+            </nav>
+        </div>
+    </header>
+    <main class="container" style="padding-bottom:64px;">
+        <section id="productView" class="card"></section>
+        <section id="productDescription" style="margin-top: 24px;"></section>
+        <section id="productReviews" style="margin-top: 24px;"></section>
+        <section id="recommendations" style="margin-top: 32px;">
+            <h3 style="margin-bottom: 16px;">Рекомендации</h3>
+            <div id="recommendationsGrid" class="grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));"></div>
+        </section>
+    </main>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const m = location.search.match(/sku=(\d{8})/);
+            if (!m) return;
+            const state = JSON.parse(localStorage.getItem('mini_shop_state_v1')||'{}');
+            const p = (state.products||[]).find(x=>String(x.sku)===m[1]);
+            
+            // Функция для подсчета отзывов
+            function getReviewsCount(productId) {
+                const reviews = state.reviews || [];
+                const count = reviews.filter(r => r.productId === productId).length;
+                return count === 0 ? 'нет отзывов' : `${count} отзывов`;
+            }
+            const el = document.getElementById('productView');
+            const descEl = document.getElementById('productDescription');
+            const revEl = document.getElementById('productReviews');
+            const recEl = document.getElementById('recommendationsGrid');
+            if(!p){ el.innerHTML = '<div class="empty">Товар не найден</div>'; return; }
+            const colors = Array.isArray(p.colors)?p.colors:[];
+            const sizes = Array.isArray(p.sizes)?p.sizes:[];
+            el.innerHTML = `
+                <div class="row">
+                    <div style="flex:1 1 auto;">
+                        <h3 style="margin:0 0 8px 0;">${p.name}</h3>
+                        <div class="muted">SKU ${p.sku}</div>
+                        <div style="height:8px"></div>
+                        <img class="thumb" style="width:100%;max-width:420px;border-radius:12px;border:1px solid var(--border);cursor:zoom-in;" src="${p.image}" alt="${p.name}" id="productMainImg">
+                    </div>
+                    <div style="min-width:220px;">
+                        <div class="price" style="font-size:20px;">${(p.price).toLocaleString('ru-RU')} ₽</div>
+                        <div class="muted">В наличии: ${p.stock || 0}</div>
+                        <div style="height:8px"></div>
+                        ${colors.length?`<label class=\"muted\">Цвет</label><div class=\"options\" data-type=\"color\">${colors.map((c,i)=>`<button class=\"chip ${i===0?'active':''}\" data-val=\"${c}\">${c}</button>`).join('')}</div><div style=\"height:8px\"></div>`:''}
+                        ${sizes.length?`<label class=\"muted\">Размер</label><div class=\"options\" data-type=\"size\">${sizes.map((s,i)=>`<button class=\"chip ${i===0?'active':''}\" data-val=\"${s}\">${s}</button>`).join('')}</div><div style=\"height:8px\"></div>`:''}
+                        <button id="addBtn" class="btn primary block" ${(p.stock || 0) <= 0 ? 'disabled' : ''}>${(p.stock || 0) <= 0 ? 'Товар закончился' : 'В корзину'}</button>
+                    </div>
+                </div>
+            `;
+            // Описание товара
+            descEl.innerHTML = `
+                <div class="card">
+                    <h4>Описание</h4>
+                    <p>${p.description || 'Описание товара пока не добавлено. Это качественный товар с отличными характеристиками.'}</p>
+                </div>
+            `;
+            
+            // Рекомендации
+            const recommendations = (state.products||[]).filter(prod => prod.id !== p.id).slice(0, 6);
+            recEl.innerHTML = '';
+            recommendations.forEach(rec => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                const cat = (state.categories||[]).find(c => c.id === rec.categoryId);
+                const slug = cat && cat.slugEn ? cat.slugEn : '';
+                card.innerHTML = `
+                    <a class="link-card" href="product.html?cat=${encodeURIComponent(slug)}&sku=${encodeURIComponent(rec.sku || '')}">
+                        <img class="thumb" src="${rec.image}" alt="${rec.name}">
+                    </a>
+                    <div class="body">
+                        <div class="title">${rec.name}</div>
+                        <div class="muted" style="font-size: 12px;">${getReviewsCount(rec.id)}</div>
+                        <div class="actions">
+                            <div style="display: flex; gap: 6px;">
+                                <button class="btn-icon" data-id="${rec.id}" title="В корзину">
+                                    <svg viewBox="0 0 24 24"><path d="M7 4V2C7 1.45 7.45 1 8 1H16C16.55 1 17 1.45 17 2V4H20C20.55 4 21 4.45 21 5S20.55 6 20 6H19V19C19 20.1 18.1 21 17 21H7C5.9 21 5 20.1 5 19V6H4C3.45 6 3 5.55 3 5S3.45 4 4 4H7ZM9 3V4H15V3H9ZM7 6V19H17V6H7Z"/></svg>
+                                </button>
+                                <button class="btn-icon" title="В избранное">
+                                    <svg viewBox="0 0 24 24"><path d="M12 21.35L10.55 20.03C5.4 15.36 2 12.27 2 8.5C2 5.41 4.42 3 7.5 3C9.24 3 10.91 3.81 12 5.08C13.09 3.81 14.76 3 16.5 3C19.58 3 22 5.41 22 8.5C22 12.27 18.6 15.36 13.45 20.03L12 21.35Z"/></svg>
+                                </button>
+                            </div>
+                            <div class="price">${rec.price.toLocaleString('ru-RU')} ₽</div>
+                        </div>
+                    </div>
+                `;
+                card.querySelector('button.btn-icon[data-id]').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const ev = new CustomEvent('add-to-cart', { detail: { productId: rec.id, color: '', size: '' } });
+                    window.dispatchEvent(ev);
+                });
+                recEl.appendChild(card);
+            });
+            
+            // выбор чипов
+            document.querySelectorAll('.options .chip').forEach(btn=>{
+                btn.addEventListener('click',()=>{
+                    const wrap = btn.parentElement;
+                    wrap.querySelectorAll('.chip').forEach(b=>b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+            });
+
+            // выравнивание ширины чипов по самому длинному тексту
+            function normalizeChipsWidth(){
+                document.querySelectorAll('#productView .options').forEach(group=>{
+                    const chips = Array.from(group.querySelectorAll('.chip'));
+                    if (chips.length === 0) return;
+                    chips.forEach(c=>{ c.style.width=''; });
+                    let max = 0;
+                    chips.forEach(c=>{ max = Math.max(max, c.scrollWidth); });
+                    chips.forEach(c=>{ c.style.width = (max + 24) + 'px'; }); // +паддинги
+                });
+            }
+            normalizeChipsWidth();
+            window.addEventListener('resize', normalizeChipsWidth);
+            
+             const addBtn = document.getElementById('addBtn');
+             addBtn.addEventListener('click', ()=>{
+                 if ((p.stock || 0) <= 0) return;
+                 const selColor = document.querySelector('.options[data-type="color"] .chip.active')?.dataset.val || '';
+                 const selSize = document.querySelector('.options[data-type="size"] .chip.active')?.dataset.val || '';
+                 const ev = new CustomEvent('add-to-cart', { detail: { productId: p.id, color: selColor, size: selSize } });
+                 window.dispatchEvent(ev);
+                 // показать бар количества
+                 showInlineQtyBar();
+             });
+
+             function showInlineQtyBar(){
+                 if(document.getElementById('qtyBar')) return;
+                 const wrap = document.querySelector('#productView .row > div:nth-child(2)');
+                 const bar = document.createElement('div');
+                 bar.className = 'qty-bar';
+                 bar.id = 'qtyBar';
+                 bar.innerHTML = `<a href="cart.html" class="btn" style="padding:8px 12px;background:#2a2f35;border:1px solid var(--border);">Перейти</a>
+                                   <button class="qty-btn" id="decBtn">−</button>
+                                   <span id="qtyVal">1</span>
+                                   <button class="qty-btn" id="incBtn">+</button>`;
+                 wrap.appendChild(bar);
+                 addBtn.style.display = 'none';
+                 
+                 const getSel = ()=>({
+                     color: document.querySelector('.options[data-type="color"] .chip.active')?.dataset.val || '',
+                     size: document.querySelector('.options[data-type="size"] .chip.active')?.dataset.val || ''
+                 });
+                 
+                 const updateQtyDisplay = () => {
+                     const sel = getSel();
+                     const state = JSON.parse(localStorage.getItem('mini_shop_state_v1')||'{}');
+                     const cartItem = state.cart?.find(ci => ci.productId === p.id && (ci.color||'')===sel.color && (ci.size||'')===sel.size);
+                     const currentQty = cartItem ? cartItem.qty : 0;
+                     const qEl = bar.querySelector('#qtyVal');
+                     qEl.textContent = currentQty;
+                     
+                     if (currentQty === 0) {
+                         bar.remove();
+                         addBtn.style.display = '';
+                     }
+                 };
+                 
+                 bar.querySelector('#incBtn').addEventListener('click',()=>{
+                     const sel = getSel();
+                     const ev = new CustomEvent('add-to-cart', { detail: { productId: p.id, color: sel.color, size: sel.size } });
+                     window.dispatchEvent(ev);
+                     setTimeout(updateQtyDisplay, 100); // Обновляем после изменения корзины
+                 });
+                 bar.querySelector('#decBtn').addEventListener('click',()=>{
+                     const sel = getSel();
+                     window.dispatchEvent(new CustomEvent('change-qty', { detail: { productId: p.id, delta: -1, color: sel.color, size: sel.size } }));
+                     setTimeout(updateQtyDisplay, 100); // Обновляем после изменения корзины
+                 });
+                 
+                 // Обновляем отображение при загрузке
+                 updateQtyDisplay();
+             }
+
+             // лайтбокс для фото товара
+             const mainImg = document.getElementById('productMainImg');
+             if (mainImg) {
+                 mainImg.addEventListener('click', () => {
+                     const overlay = document.createElement('div');
+                     overlay.style.position = 'fixed';
+                     overlay.style.inset = '0';
+                     overlay.style.background = 'rgba(0,0,0,0.9)';
+                     overlay.style.display = 'flex';
+                     overlay.style.alignItems = 'center';
+                     overlay.style.justifyContent = 'center';
+                     overlay.style.zIndex = '9999';
+                     overlay.style.opacity = '0';
+                     overlay.style.transition = 'opacity 0.3s ease';
+                     
+                     const img = document.createElement('img');
+                     img.src = p.image;
+                     img.style.maxWidth = '90vw';
+                     img.style.maxHeight = '90vh';
+                     img.style.borderRadius = '12px';
+                     img.style.boxShadow = '0 20px 60px rgba(0,0,0,0.5)';
+                     img.style.transform = 'scale(0.8)';
+                     img.style.transition = 'transform 0.3s ease';
+                     
+                     const closeBtn = document.createElement('button');
+                     closeBtn.innerHTML = '✕';
+                     closeBtn.style.position = 'absolute';
+                     closeBtn.style.top = '20px';
+                     closeBtn.style.right = '20px';
+                     closeBtn.style.width = '40px';
+                     closeBtn.style.height = '40px';
+                     closeBtn.style.borderRadius = '50%';
+                     closeBtn.style.border = '1px solid rgba(255,255,255,0.3)';
+                     closeBtn.style.background = 'rgba(0,0,0,0.5)';
+                     closeBtn.style.color = '#fff';
+                     closeBtn.style.fontSize = '18px';
+                     closeBtn.style.cursor = 'pointer';
+                     closeBtn.style.display = 'flex';
+                     closeBtn.style.alignItems = 'center';
+                     closeBtn.style.justifyContent = 'center';
+                     
+                     overlay.appendChild(img);
+                     overlay.appendChild(closeBtn);
+                     document.body.appendChild(overlay);
+                     
+                     // анимация появления
+                     requestAnimationFrame(() => {
+                         overlay.style.opacity = '1';
+                         img.style.transform = 'scale(1)';
+                     });
+                     
+                     // закрытие по клику на фон или кнопку
+                     const closeLightbox = () => {
+                         overlay.style.opacity = '0';
+                         img.style.transform = 'scale(0.8)';
+                         setTimeout(() => {
+                             document.body.removeChild(overlay);
+                         }, 300);
+                     };
+                     
+                     overlay.addEventListener('click', (e) => {
+                         if (e.target === overlay || e.target === closeBtn) {
+                             closeLightbox();
+                         }
+
+            // ===== Отзывы =====
+            function renderStars(rating) {
+                const r = Math.max(0, Math.min(5, Number(rating)||0));
+                return '★★★★★'.slice(0, r) + '☆☆☆☆☆'.slice(0, 5-r);
+            }
+            const canReview = (state.orders||[]).some(o => (o.status==='picked') && (o.items||[]).some(it => {
+                const prod = (state.products||[]).find(pp=>pp.id===it.productId);
+                return prod && String(prod.sku)===String(p.sku);
+            }));
+            const reviews = Array.isArray(state.reviews) ? state.reviews.filter(rv=>rv.productId===p.id) : [];
+            let html = '<div class="card"><h4 style="margin-bottom:8px;">Отзывы</h4>';
+            if (canReview) {
+                html += `
+                    <div id="reviewForm" class="list" style="gap:6px;">
+                        <div class="muted">Ваша оценка:</div>
+                        <div id="stars" style="font-size:20px;letter-spacing:2px;cursor:pointer;user-select:none;">☆☆☆☆☆</div>
+                        <textarea id="reviewText" rows="3" placeholder="Ваш отзыв" style="width:100%;"></textarea>
+                        <input id="reviewPhoto" type="url" placeholder="Ссылка на фото (необязательно)">
+                        <button id="sendReview" class="btn primary">Отправить отзыв</button>
+                    </div>`;
+            } else {
+                html += '<div class="muted">Отзывы могут оставлять только покупатели, забравшие товар.</div>';
+            }
+            if (reviews.length) {
+                html += '<div class="list" style="margin-top:12px; gap:8px;">';
+                reviews.forEach(rv=>{
+                    html += `
+                        <div class="card">
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <div style="font-size:16px;">${renderStars(rv.rating)}</div>
+                                <div class="muted" style="font-size:12px;">${new Date(rv.date).toLocaleDateString('ru-RU')}</div>
+                            </div>
+                            <div style="margin-top:6px;">${(rv.text||'').replace(/</g,'&lt;')}</div>
+                            ${rv.photo?`<div style="margin-top:6px;"><img src="${rv.photo}" alt="photo" style="width:96px;height:96px;object-fit:cover;border-radius:8px;cursor:zoom-in;" data-full="${rv.photo}"></div>`:''}
+                        </div>`;
+                });
+                html += '</div>';
+            } else {
+                html += '<div class="muted" style="margin-top:6px;">Пока нет отзывов</div>';
+            }
+            html += '</div>';
+            revEl.innerHTML = html;
+            // интерактив звёзд
+            let currentRating = 0;
+            const stars = document.getElementById('stars');
+            if (stars) {
+                const paint = (r)=>{ stars.textContent = '★★★★★'.slice(0,r)+'☆☆☆☆☆'.slice(0,5-r); };
+                stars.addEventListener('mousemove',(e)=>{
+                    const rect = stars.getBoundingClientRect();
+                    const pos = Math.min(1, Math.max(0, (e.clientX-rect.left)/rect.width));
+                    paint(Math.max(1, Math.ceil(pos*5)));
+                });
+                stars.addEventListener('mouseleave',()=>paint(currentRating||0));
+                stars.addEventListener('click',(e)=>{
+                    const rect = stars.getBoundingClientRect();
+                    const pos = Math.min(1, Math.max(0, (e.clientX-rect.left)/rect.width));
+                    currentRating = Math.max(1, Math.ceil(pos*5));
+                    paint(currentRating);
+                });
+            }
+            const sendBtn = document.getElementById('sendReview');
+            if (sendBtn) {
+                sendBtn.addEventListener('click', () => {
+                    if (!currentRating) return alert('Поставьте оценку');
+                    const txt = (document.getElementById('reviewText')?.value||'').trim();
+                    const photo = (document.getElementById('reviewPhoto')?.value||'').trim();
+                    const s = JSON.parse(localStorage.getItem('mini_shop_state_v1')||'{}');
+                    if (!Array.isArray(s.reviews)) s.reviews = [];
+                    s.reviews.unshift({ id: Date.now(), productId: p.id, userId: 'user1', rating: currentRating, text: txt, photo, date: new Date().toISOString() });
+                    localStorage.setItem('mini_shop_state_v1', JSON.stringify(s));
+                    location.reload();
+                });
+            }
+            // лайтбокс для фото в отзывах
+            revEl.addEventListener('click', (e)=>{
+                const t = e.target;
+                if (t && t.matches('img[data-full]')) {
+                    const src = t.getAttribute('data-full');
+                    const overlay = document.createElement('div');
+                    overlay.style.position='fixed'; overlay.style.inset='0'; overlay.style.background='rgba(0,0,0,.9)'; overlay.style.display='flex'; overlay.style.alignItems='center'; overlay.style.justifyContent='center'; overlay.style.zIndex='9999'; overlay.style.opacity='0'; overlay.style.transition='opacity .2s ease';
+                    overlay.innerHTML = `<img src="${src}" style="max-width:92vw;max-height:92vh;border-radius:12px;box-shadow:0 20px 80px rgba(0,0,0,.45);transform:scale(.96);transition:transform .2s ease;">`;
+                    document.body.appendChild(overlay);
+                    const img = overlay.querySelector('img');
+                    requestAnimationFrame(()=>{ overlay.style.opacity='1'; img.style.transform='scale(1)'; });
+                    const close=()=>{ overlay.style.opacity='0'; img.style.transform='scale(.96)'; setTimeout(()=>overlay.remove(),200); };
+                    overlay.addEventListener('click', close);
+                    document.addEventListener('keydown', function onKey(e){ if(e.key==='Escape'){ close(); document.removeEventListener('keydown', onKey);} });
+                }
+            });
+                     });
+                     
+                     // закрытие по Escape
+                     const handleKeydown = (e) => {
+                         if (e.key === 'Escape') {
+                             closeLightbox();
+                             document.removeEventListener('keydown', handleKeydown);
+                         }
+                     };
+                     document.addEventListener('keydown', handleKeydown);
+                 });
+             }
+         });
+     </script>
+ </body>
+ </html>
+
+

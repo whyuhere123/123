@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>Админка</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .container { max-width: 800px; margin: 0 auto; }
+        .card { background: #333333; border-radius: 8px; padding: 0.75rem; }
+        .muted { color: #ccc; font-size: 0.9rem; }
+        .btn { padding: 0.6rem 0.8rem; border-radius: 6px; border: none; color: #fff; background: #555; }
+        .btn.primary { background: #006bff; }
+        input, select, textarea { width: 100%; padding: 0.6rem; background: #2c2c2c; color: #fff; border-radius: 6px; border: 1px solid #444; }
+        .list { display: flex; flex-direction: column; gap: 0.5rem; }
+        .row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+        .danger { background: #a73737; }
+    </style>
+    <script defer src="admin.js"></script>
+</head>
+<body>
+    <main class="container" style="padding: 1rem;">
+        <h2 style="text-align:center; margin-top:0;">Админка</h2>
+
+        <div id="loginCard" class="card">
+            <div class="muted">Введите пароль</div>
+            <input id="adminPassword" type="password" placeholder="Пароль">
+            <div style="height:0.5rem;"></div>
+            <button id="loginBtn" class="btn primary">Войти</button>
+        </div>
+
+        <div id="adminPanel" style="display:none;" class="list">
+            <div class="card">
+                <h3 style="margin:0 0 0.5rem 0;">Категории</h3>
+                <div class="row">
+                    <input id="newCategoryName" placeholder="Название категории">
+                    <input id="newCategorySlug" placeholder="Slug (англ. для ссылки)">
+                    <input id="newCategoryImage" placeholder="URL изображения 340x220">
+                    <button id="addCategoryBtn" class="btn primary">Добавить</button>
+                </div>
+                <div id="categoriesList" class="list" style="margin-top:0.5rem;"></div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin:0 0 0.5rem 0;">Товары</h3>
+                <div style="display:grid; gap:0.5rem; grid-template-columns: 1fr;">
+                    <input id="newProductName" placeholder="Название товара">
+                    <input id="newProductPrice" type="number" min="0" step="1" placeholder="Цена, ₽">
+                    <select id="newProductCategory"></select>
+                    <input id="newProductImage" placeholder="URL квадратного изображения">
+                    <input id="newProductColors" placeholder="Цвета (через запятую)">
+                    <input id="newProductSizes" placeholder="Размеры (через запятую)">
+                    <div id="stockByOptions" class="list" style="display:none; gap:0.5rem;">
+                        <div class="muted">Остатки по вариантам (цвет/размер):</div>
+                        <div id="stockByOptionsGrid" class="list" style="gap:0.35rem;"></div>
+                    </div>
+                    <input id="newProductStock" type="number" min="0" placeholder="Количество в наличии">
+                    <textarea id="newProductDescription" placeholder="Описание товара" rows="3"></textarea>
+                    <div class="row">
+                        <input id="newProductSku" placeholder="Артикул (8 цифр)">
+                        <button id="genSkuBtn" class="btn">Сгенерировать</button>
+                    </div>
+                    <button id="addProductBtn" class="btn primary">Добавить товар</button>
+                </div>
+                <div id="productsList" class="list" style="margin-top:0.5rem;"></div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin:0 0 0.5rem 0;">Заказы</h3>
+                <div id="ordersAdminList" class="list"></div>
+            </div>
+
+            <a href="index.html" class="muted" style="text-align:center; text-decoration:none;">← Вернуться в магазин</a>
+        </div>
+    </main>
+</body>
+</html>
+
+

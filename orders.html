@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ру" data-theme="gray">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>История заказов — TROYKA SHOP</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .container { max-width: 960px; margin: 0 auto; padding: 1rem 12px; }
+        .order { background:#2a2a2a; border:1px solid #3a3a3a; border-radius:10px; padding:12px; }
+        .grid { display:grid; gap:8px; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+        .product-card { cursor:pointer; }
+    </style>
+    <script>
+    const LS_STATE='mini_shop_state_v1';
+    function fmt(n){return `${Number(n).toLocaleString('ru-RU')} ₽`;}
+    function goToProductCategory(catId){ location.href = `index.html#cat=${catId}`; }
+    document.addEventListener('DOMContentLoaded', () => {
+        const state = JSON.parse(localStorage.getItem(LS_STATE)||'{}');
+        const root = document.getElementById('root');
+        const chips = document.getElementById('chips');
+        if(!state.orders || state.orders.length===0){
+            root.innerHTML = '<div class="empty">Заказов пока нет</div>';
+            return;
+        }
+        state.orders.forEach((o)=>{
+            const a = document.createElement('a');
+            a.className = 'nav-link';
+            a.href = `#${o.id}`;
+            a.textContent = new Date(o.date).toLocaleDateString('ru-RU');
+            chips.appendChild(a);
+        });
+        state.orders.forEach((o)=>{
+            const wrap = document.createElement('div');
+            wrap.className='order'; wrap.id = o.id;
+            const head = document.createElement('div');
+            head.className='row';
+            head.innerHTML = `<div class="muted">${new Date(o.date).toLocaleString('ru-RU')}</div><div class="price">${fmt(o.total)}</div>`;
+            wrap.appendChild(head);
+            const grid = document.createElement('div');
+            grid.className='grid';
+            o.items.forEach((it)=>{
+                const p = (state.products||[]).find(x=>x.id===it.productId);
+                if(!p) return;
+                const card = document.createElement('div');
+                card.className='product-card';
+                card.innerHTML = `
+                    <img class="thumb" style="width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:10px;border:1px solid #3a3a3a;" src="${p.image}" alt="${p.name}">
+                    <div class="muted" style="margin-top:6px;">${p.name} — ${fmt(p.price)}</div>
+                `;
+                card.addEventListener('click', ()=>goToProductCategory(p.categoryId));
+                grid.appendChild(card);
+            });
+            wrap.appendChild(grid);
+            root.appendChild(wrap);
+            const spacer = document.createElement('div'); spacer.style.height='8px'; root.appendChild(spacer);
+        });
+    });
+    </script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="container navbar nav-wrap">
+            <a href="index.html" class="display-title" style="text-decoration:none; font-size: clamp(20px,4.5vw,28px);">
+                <span class="gradient-text">TROYKA</span> <span class="accent">SHOP</span>
+            </a>
+        </div>
+    </header>
+    <main class="container">
+        <h2 style="margin-top:0;">История заказов</h2>
+        <div id="chips" class="nav" style="flex-wrap:wrap; gap:6px; margin-bottom:10px;"></div>
+        <div id="root" class="list"></div>
+    </main>
+</body>
+</html>
+
+
